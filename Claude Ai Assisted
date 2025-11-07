@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painting Cost Estimator</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .app-header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .app-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #4ade80;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .step-section {
+            padding: 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .step-section.collapsed {
+            padding: 20px 30px;
+            cursor: pointer;
+            background: #f9fafb;
+        }
+
+        .step-section.collapsed:hover {
+            background: #f3f4f6;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .step-section.collapsed .step-header {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+
+        .step-number.completed {
+            background: #10b981;
+        }
+
+        .step-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .step-content {
+            margin-left: 44px;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1e40af;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-option:hover {
+            border-color: #667eea;
+            background: #f9fafb;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .radio-option.selected {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .input-with-unit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .unit-label {
+            color: #6b7280;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .room-row {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .room-title {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .step-actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .results-section {
+            padding: 30px;
+            background: #f9fafb;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .result-value.highlight {
+            color: #667eea;
+        }
+
+        .result-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .breakdown-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .breakdown-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .breakdown-row:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 18px;
+            padding-top: 16px;
+            border-top: 2px solid #1f2937;
+        }
+
+        .factors-list {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+        }
+
+        .factor-item {
+            display: flex;
+            align-items: start;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 4px;
+        }
+
+        .factor-icon {
+            color: #f59e0b;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-option:hover {
+            border-color: #667eea;
+            background: #f9fafb;
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-option.checked {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .calculated-value {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .admin-toggle {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .toggle-link {
+            color: #667eea;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        .toggle-link:hover {
+            color: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function PaintingEstimator() {
+            // State for all inputs across all steps
+            const [currentStep, setCurrentStep] = useState(1);
+            const [completedSteps, setCompletedSteps] = useState([]);
+
+            // Step 1: Job context
+            const [jobType, setJobType] = useState('');
+
+            // Step 2: Dimensions
+            const [rooms, setRooms] = useState([{id: 1, length: '', width: '', height: 8}]);
+            const [W_total, setW_total] = useState(0);
+
+            // Step 3: Ceilings & extra surfaces
+            const [paintCeilings, setPaintCeilings] = useState(false);
+            const [ceilingRooms, setCeilingRooms] = useState([{id: 1, length: '', width: ''}]);
+            const [W_ceiling, setW_ceiling] = useState(0);
+            const [paintTrim, setPaintTrim] = useState(false);
+
+            // Step 4: Trim
+            const [T, setT] = useState(0);
+            const [trimDetail, setTrimDetail] = useState('standard');
+            const [numDoors, setNumDoors] = useState(0);
+            const [R_t, setR_t] = useState(40);
+
+            // Step 5: Coats & colour
+            const [currentColour, setCurrentColour] = useState('');
+            const [newColour, setNewColour] = useState('');
+            const [perfectCoverage, setPerfectCoverage] = useState(false);
+            const [primingNeeded, setPrimingNeeded] = useState(false);
+            const [D, setD] = useState(2);
+
+            // Step 6: Prep difficulty
+            const [prepLevel, setPrepLevel] = useState('');
+            const [C_prep, setC_prep] = useState(1.0);
+
+            // Step 7: Paint quality
+            const [paintTier, setPaintTier] = useState('');
+            const [Q_paint, setQ_paint] = useState(1.0);
+            const [rushJob, setRushJob] = useState(false);
+            const [C_risk, setC_risk] = useState(1.05);
+            const [highSeason, setHighSeason] = useState(false);
+
+            // Step 8: Labour rates (admin)
+            const [showAdmin, setShowAdmin] = useState(false);
+            const [R_p, setR_p] = useState(85);
+            const [R_lab, setR_lab] = useState(37.5);
+            const [P_mat, setP_mat] = useState(0.375);
+            const [OH, setOH] = useState(0.125);
+            const [M, setM] = useState(0.20);
+
+            // Step 9 & 10: Calculations
+            const [results, setResults] = useState(null);
+            const [triggeredFactors, setTriggeredFactors] = useState([]);
+
+            // Calculate W_total whenever rooms change
+            useEffect(() => {
+                const total = rooms.reduce((sum, room) => {
+                    const l = parseFloat(room.length) || 0;
+                    const w = parseFloat(room.width) || 0;
+                    const h = parseFloat(room.height) || 8;
+                    return sum + (2 * (l + w) * h);
+                }, 0);
+                setW_total(total);
+            }, [rooms]);
+
+            // Calculate W_ceiling whenever ceiling rooms change
+            useEffect(() => {
+                const total = ceilingRooms.reduce((sum, room) => {
+                    const l = parseFloat(room.length) || 0;
+                    const w = parseFloat(room.width) || 0;
+                    return sum + (l * w);
+                }, 0);
+                setW_ceiling(total);
+            }, [ceilingRooms]);
+
+            // Update D and P_mat based on colour changes
+            useEffect(() => {
+                let newD = 2;
+                let factors = [];
+
+                if ((currentColour === 'dark' && newColour === 'lighter') || perfectCoverage) {
+                    newD = 3;
+                    if (currentColour === 'dark' && newColour === 'lighter') {
+                        factors.push('3 coats selected because: dark-to-light change');
+                    }
+                    if (perfectCoverage) {
+                        factors.push('3 coats selected because: perfect coverage requested');
+                    }
+                }
+
+                setD(newD);
+            }, [currentColour, newColour, perfectCoverage]);
+
+            // Update C_prep based on prep level and small job inefficiency
+            useEffect(() => {
+                let newC_prep = 1.0;
+
+                if (prepLevel === 'minimal') newC_prep = 1.0;
+                else if (prepLevel === 'medium') newC_prep = 1.05;
+                else if (prepLevel === 'heavy') newC_prep = 1.15;
+
+                // Small job inefficiency
+                const W = W_total + W_ceiling;
+                if (W > 0 && W < 400) {
+                    newC_prep = Math.max(newC_prep, 1.15);
+                }
+
+                // Priming adjustment
+                if (primingNeeded) {
+                    newC_prep += 0.075;
+                }
+
+                setC_prep(newC_prep);
+            }, [prepLevel, W_total, W_ceiling, primingNeeded]);
+
+            // Update Q_paint based on paint tier
+            useEffect(() => {
+                if (paintTier === 'standard') setQ_paint(1.0);
+                else if (paintTier === 'premium') setQ_paint(1.15);
+            }, [paintTier]);
+
+            // Update C_risk based on rush job
+            useEffect(() => {
+                setC_risk(rushJob ? 1.10 : 1.05);
+            }, [rushJob]);
+
+            // Update R_t based on trim detail
+            useEffect(() => {
+                setR_t(trimDetail === 'standard' ? 40 : 25);
+            }, [trimDetail]);
+
+            // Update margin based on high season
+            useEffect(() => {
+                setM(highSeason ? 0.25 : 0.20);
+            }, [highSeason]);
+
+            const addRoom = () => {
+                setRooms([...rooms, {id: rooms.length + 1, length: '', width: '', height: 8}]);
+            };
+
+            const removeRoom = (id) => {
+                setRooms(rooms.filter(r => r.id !== id));
+            };
+
+            const updateRoom = (id, field, value) => {
+                setRooms(rooms.map(r => r.id === id ? {...r, [field]: value} : r));
+            };
+
+            const addCeilingRoom = () => {
+                setCeilingRooms([...ceilingRooms, {id: ceilingRooms.length + 1, length: '', width: ''}]);
+            };
+
+            const removeCeilingRoom = (id) => {
+                setCeilingRooms(ceilingRooms.filter(r => r.id !== id));
+            };
+
+            const updateCeilingRoom = (id, field, value) => {
+                setCeilingRooms(ceilingRooms.map(r => r.id === id ? {...r, [field]: value} : r));
+            };
+
+            const markStepComplete = (step) => {
+                if (!completedSteps.includes(step)) {
+                    setCompletedSteps([...completedSteps, step]);
+                }
+                setCurrentStep(step + 1);
+            };
+
+            const goToStep = (step) => {
+                setCurrentStep(step);
+            };
+
+            const validateStep = (step) => {
+                switch(step) {
+                    case 1:
+                        return jobType !== '';
+                    case 2:
+                        return rooms.every(r => r.length && r.width && r.height) && W_total > 0;
+                    case 3:
+                        if (paintCeilings) {
+                            return ceilingRooms.every(r => r.length && r.width);
+                        }
+                        return true;
+                    case 4:
+                        if (paintTrim) {
+                            return T > 0 && trimDetail !== '';
+                        }
+                        return true;
+                    case 5:
+                        return currentColour !== '' && newColour !== '';
+                    case 6:
+                        return prepLevel !== '';
+                    case 7:
+                        return paintTier !== '';
+                    case 8:
+                        return true; // Admin section always valid
+                    default:
+                        return true;
+                }
+            };
+
+            const calculateResults = () => {
+                const factors = [];
+
+                // Total wall area
+                const W = W_total + W_ceiling;
+
+                // Material cost adjustment for 3 coats
+                let P_mat_adjusted = P_mat;
+                if (D === 3) {
+                    P_mat_adjusted = P_mat * 1.25;
+                    factors.push('Material cost increased 25% due to 3-coat requirement');
+                }
+
+                // Labour hours
+                const H_walls = (W * D) / R_p;
+                const H_trim = paintTrim ? (T * D) / R_t : 0;
+                const H_total = (H_walls + H_trim) * C_prep;
+
+                // Labour cost
+                const C_labour = H_total * R_lab;
+
+                // Material cost
+                const C_materials = (W * P_mat_adjusted * D) * Q_paint;
+
+                // Base expense
+                const C_base = (C_labour + C_materials) * (1 + OH);
+
+                // Final price
+                const Price = (C_base * C_risk) / (1 - M);
+
+                // Price per sqft
+                const price_per_sqft = Price / W;
+
+                // Track triggered factors
+                if (W < 400) {
+                    factors.push('Small job inefficiency applied (area < 400 sq ft)');
+                }
+
+                if (currentColour === 'dark' && newColour === 'lighter') {
+                    factors.push('3 coats applied: covering dark/dominant color with lighter');
+                }
+
+                if (perfectCoverage) {
+                    factors.push('3 coats applied: perfect coverage requested');
+                }
+
+                if (primingNeeded) {
+                    factors.push('Prep time increased: priming repairs/stains');
+                }
+
+                if (prepLevel === 'heavy') {
+                    factors.push('Heavy prep applied: extensive patching/masking');
+                }
+
+                if (paintTier === 'premium') {
+                    factors.push('Premium paint applied: 15% material increase');
+                }
+
+                if (rushJob) {
+                    factors.push('Rush job risk applied: 10% buffer');
+                }
+
+                if (highSeason) {
+                    factors.push('High-season pricing: 25% margin (vs. 20% standard)');
+                }
+
+                if (trimDetail === 'detailed') {
+                    factors.push('Detailed trim: reduced coverage rate (25 lf/hr vs 40 lf/hr)');
+                }
+
+                setTriggeredFactors(factors);
+                setResults({
+                    Price,
+                    price_per_sqft,
+                    H_total,
+                    C_labour,
+                    C_materials,
+                    C_base,
+                    W,
+                    T: paintTrim ? T : 0,
+                    D,
+                    C_prep,
+                    Q_paint,
+                    C_risk,
+                    M,
+                    OH
+                });
+
+                markStepComplete(8);
+            };
+
+            const progressPercent = (currentStep / 9) * 100;
+
+            return (
+                <div className="app-container">
+                    <div className="app-header">
+                        <h1>Painting Cost Estimator</h1>
+                        <p>B2C Residential Painting Quote Generator</p>
+                        <div className="progress-bar">
+                            <div className="progress-fill" style={{width: `${progressPercent}%`}}></div>
+                        </div>
+                    </div>
+
+                    {/* STEP 1: Job Context */}
+                    <div className={`step-section ${currentStep !== 1 && 'collapsed'}`}
+                         onClick={() => currentStep !== 1 && goToStep(1)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(1) ? 'completed' : ''}`}>1</span>
+                                <span className="step-title">Job Context</span>
+                            </div>
+                        </div>
+                        {currentStep === 1 && (
+                            <div className="step-content">
+                                <div className="form-group">
+                                    <label className="form-label">What are we painting today?</label>
+                                    <div className="radio-group">
+                                        <label className={`radio-option ${jobType === 'single-room' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="jobType"
+                                                value="single-room"
+                                                checked={jobType === 'single-room'}
+                                                onChange={(e) => setJobType(e.target.value)}
+                                            />
+                                            Single room (bedroom/office)
+                                        </label>
+                                        <label className={`radio-option ${jobType === 'multiple-rooms' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="jobType"
+                                                value="multiple-rooms"
+                                                checked={jobType === 'multiple-rooms'}
+                                                onChange={(e) => setJobType(e.target.value)}
+                                            />
+                                            Multiple rooms (interior)
+                                        </label>
+                                        <label className={`radio-option ${jobType === 'hallway' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="jobType"
+                                                value="hallway"
+                                                checked={jobType === 'hallway'}
+                                                onChange={(e) => setJobType(e.target.value)}
+                                            />
+                                            Hallway/stairway
+                                        </label>
+                                        <label className={`radio-option ${jobType === 'full-interior' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="jobType"
+                                                value="full-interior"
+                                                checked={jobType === 'full-interior'}
+                                                onChange={(e) => setJobType(e.target.value)}
+                                            />
+                                            Full interior (walls + ceilings + trim)
+                                        </label>
+                                        <label className={`radio-option ${jobType === 'exterior' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="jobType"
+                                                value="exterior"
+                                                checked={jobType === 'exterior'}
+                                                onChange={(e) => setJobType(e.target.value)}
+                                            />
+                                            Exterior siding + trim
+                                        </label>
+                                        <label className={`radio-option ${jobType === 'trim-only' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="jobType"
+                                                value="trim-only"
+                                                checked={jobType === 'trim-only'}
+                                                onChange={(e) => setJobType(e.target.value)}
+                                            />
+                                            Trim/doors only
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {jobType === 'single-room' && (
+                                    <div className="info-box">
+                                        💡 A typical 10×10 room with 8 ft walls has approximately 320 sq ft of wall surface.
+                                    </div>
+                                )}
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => markStepComplete(1)}
+                                        disabled={!validateStep(1)}
+                                    >
+                                        Continue to Dimensions
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 2: Dimensions */}
+                    <div className={`step-section ${currentStep !== 2 && 'collapsed'}`}
+                         onClick={() => currentStep !== 2 && completedSteps.includes(1) && goToStep(2)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(2) ? 'completed' : ''}`}>2</span>
+                                <span className="step-title">Wall Dimensions</span>
+                            </div>
+                            {currentStep !== 2 && W_total > 0 && (
+                                <span className="calculated-value">{W_total.toFixed(0)} sq ft</span>
+                            )}
+                        </div>
+                        {currentStep === 2 && (
+                            <div className="step-content">
+                                <div className="form-group">
+                                    <label className="form-label">Room Measurements</label>
+                                    {rooms.map((room, index) => (
+                                        <div key={room.id} className="room-row">
+                                            <div className="room-header">
+                                                <span className="room-title">Room {index + 1}</span>
+                                                {rooms.length > 1 && (
+                                                    <button
+                                                        className="btn btn-danger"
+                                                        onClick={() => removeRoom(room.id)}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="input-row">
+                                                <div className="input-with-unit">
+                                                    <input
+                                                        type="number"
+                                                        className="input-field"
+                                                        placeholder="Length"
+                                                        value={room.length}
+                                                        onChange={(e) => updateRoom(room.id, 'length', e.target.value)}
+                                                        min="0"
+                                                        step="0.5"
+                                                    />
+                                                    <span className="unit-label">ft</span>
+                                                </div>
+                                                <div className="input-with-unit">
+                                                    <input
+                                                        type="number"
+                                                        className="input-field"
+                                                        placeholder="Width"
+                                                        value={room.width}
+                                                        onChange={(e) => updateRoom(room.id, 'width', e.target.value)}
+                                                        min="0"
+                                                        step="0.5"
+                                                    />
+                                                    <span className="unit-label">ft</span>
+                                                </div>
+                                                <div className="input-with-unit">
+                                                    <input
+                                                        type="number"
+                                                        className="input-field"
+                                                        placeholder="Height"
+                                                        value={room.height}
+                                                        onChange={(e) => updateRoom(room.id, 'height', e.target.value)}
+                                                        min="0"
+                                                        step="0.5"
+                                                    />
+                                                    <span className="unit-label">ft</span>
+                                                </div>
+                                            </div>
+                                            {room.length && room.width && room.height && (
+                                                <div className="calculated-value">
+                                                    Wall area: {(2 * (parseFloat(room.length) + parseFloat(room.width)) * parseFloat(room.height)).toFixed(0)} sq ft
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {(jobType === 'multiple-rooms' || jobType === 'full-interior') && (
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={addRoom}
+                                        >
+                                            + Add Another Room
+                                        </button>
+                                    )}
+                                </div>
+
+                                {W_total > 0 && (
+                                    <div className="info-box">
+                                        <strong>Total Wall Area: {W_total.toFixed(0)} sq ft</strong>
+                                    </div>
+                                )}
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentStep(1)}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => markStepComplete(2)}
+                                        disabled={!validateStep(2)}
+                                    >
+                                        Continue to Ceilings & Surfaces
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 3: Ceilings & Extra Surfaces */}
+                    <div className={`step-section ${currentStep !== 3 && 'collapsed'}`}
+                         onClick={() => currentStep !== 3 && completedSteps.includes(2) && goToStep(3)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(3) ? 'completed' : ''}`}>3</span>
+                                <span className="step-title">Ceilings & Extra Surfaces</span>
+                            </div>
+                            {currentStep !== 3 && W_ceiling > 0 && (
+                                <span className="calculated-value">+{W_ceiling.toFixed(0)} sq ft ceiling</span>
+                            )}
+                        </div>
+                        {currentStep === 3 && (
+                            <div className="step-content">
+                                <div className="form-group">
+                                    <label className={`checkbox-option ${paintCeilings ? 'checked' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={paintCeilings}
+                                            onChange={(e) => setPaintCeilings(e.target.checked)}
+                                        />
+                                        Paint ceilings
+                                    </label>
+                                </div>
+
+                                {paintCeilings && (
+                                    <div className="form-group">
+                                        <label className="form-label">Ceiling Measurements</label>
+                                        {ceilingRooms.map((room, index) => (
+                                            <div key={room.id} className="room-row">
+                                                <div className="room-header">
+                                                    <span className="room-title">Ceiling {index + 1}</span>
+                                                    {ceilingRooms.length > 1 && (
+                                                        <button
+                                                            className="btn btn-danger"
+                                                            onClick={() => removeCeilingRoom(room.id)}
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="input-row">
+                                                    <div className="input-with-unit">
+                                                        <input
+                                                            type="number"
+                                                            className="input-field"
+                                                            placeholder="Length"
+                                                            value={room.length}
+                                                            onChange={(e) => updateCeilingRoom(room.id, 'length', e.target.value)}
+                                                            min="0"
+                                                            step="0.5"
+                                                        />
+                                                        <span className="unit-label">ft</span>
+                                                    </div>
+                                                    <div className="input-with-unit">
+                                                        <input
+                                                            type="number"
+                                                            className="input-field"
+                                                            placeholder="Width"
+                                                            value={room.width}
+                                                            onChange={(e) => updateCeilingRoom(room.id, 'width', e.target.value)}
+                                                            min="0"
+                                                            step="0.5"
+                                                        />
+                                                        <span className="unit-label">ft</span>
+                                                    </div>
+                                                </div>
+                                                {room.length && room.width && (
+                                                    <div className="calculated-value">
+                                                        Ceiling area: {(parseFloat(room.length) * parseFloat(room.width)).toFixed(0)} sq ft
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={addCeilingRoom}
+                                        >
+                                            + Add Another Ceiling
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="form-group">
+                                    <label className={`checkbox-option ${paintTrim ? 'checked' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={paintTrim}
+                                            onChange={(e) => setPaintTrim(e.target.checked)}
+                                        />
+                                        Paint doors/baseboards/casings
+                                    </label>
+                                </div>
+
+                                {(W_total + W_ceiling) > 0 && (
+                                    <div className="info-box">
+                                        <strong>Total Paintable Area: {(W_total + W_ceiling).toFixed(0)} sq ft</strong>
+                                    </div>
+                                )}
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentStep(2)}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => markStepComplete(3)}
+                                        disabled={!validateStep(3)}
+                                    >
+                                        {paintTrim ? 'Continue to Trim Details' : 'Continue to Paint Details'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 4: Trim/Doors */}
+                    {paintTrim && (
+                        <div className={`step-section ${currentStep !== 4 && 'collapsed'}`}
+                             onClick={() => currentStep !== 4 && completedSteps.includes(3) && goToStep(4)}>
+                            <div className="step-header">
+                                <div>
+                                    <span className={`step-number ${completedSteps.includes(4) ? 'completed' : ''}`}>4</span>
+                                    <span className="step-title">Trim & Doors</span>
+                                </div>
+                                {currentStep !== 4 && T > 0 && (
+                                    <span className="calculated-value">{T} linear ft</span>
+                                )}
+                            </div>
+                            {currentStep === 4 && (
+                                <div className="step-content">
+                                    <div className="form-group">
+                                        <label className="form-label">Total baseboard / casing / window trim (linear feet)</label>
+                                        <div className="input-with-unit">
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                placeholder="Enter linear feet"
+                                                value={T}
+                                                onChange={(e) => setT(parseFloat(e.target.value) || 0)}
+                                                min="0"
+                                            />
+                                            <span className="unit-label">linear ft</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Number of doors to paint</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            placeholder="Enter number of doors"
+                                            value={numDoors}
+                                            onChange={(e) => {
+                                                const doors = parseInt(e.target.value) || 0;
+                                                setNumDoors(doors);
+                                                // Add ~20 linear ft per door to trim
+                                                setT(T + (doors * 20) - (numDoors * 20));
+                                            }}
+                                            min="0"
+                                        />
+                                        <div className="info-box" style={{marginTop: '8px', fontSize: '12px'}}>
+                                            Each door adds ~20 linear ft to trim calculation
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">How detailed is the trim?</label>
+                                        <div className="radio-group">
+                                            <label className={`radio-option ${trimDetail === 'standard' ? 'selected' : ''}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="trimDetail"
+                                                    value="standard"
+                                                    checked={trimDetail === 'standard'}
+                                                    onChange={(e) => setTrimDetail(e.target.value)}
+                                                />
+                                                Standard (40 lf/hr coverage)
+                                            </label>
+                                            <label className={`radio-option ${trimDetail === 'detailed' ? 'selected' : ''}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="trimDetail"
+                                                    value="detailed"
+                                                    checked={trimDetail === 'detailed'}
+                                                    onChange={(e) => setTrimDetail(e.target.value)}
+                                                />
+                                                Detailed / ornate (25 lf/hr coverage)
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="step-actions">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={() => setCurrentStep(3)}
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={() => markStepComplete(4)}
+                                            disabled={!validateStep(4)}
+                                        >
+                                            Continue to Paint Details
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* STEP 5: Coats & Colour Change */}
+                    <div className={`step-section ${currentStep !== 5 && 'collapsed'}`}
+                         onClick={() => currentStep !== 5 && completedSteps.includes(paintTrim ? 4 : 3) && goToStep(5)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(5) ? 'completed' : ''}`}>5</span>
+                                <span className="step-title">Coats & Colour Change</span>
+                            </div>
+                            {currentStep !== 5 && D > 0 && (
+                                <span className="calculated-value">{D} coats</span>
+                            )}
+                        </div>
+                        {currentStep === 5 && (
+                            <div className="step-content">
+                                <div className="form-group">
+                                    <label className="form-label">Current wall colour</label>
+                                    <div className="radio-group">
+                                        <label className={`radio-option ${currentColour === 'light' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="currentColour"
+                                                value="light"
+                                                checked={currentColour === 'light'}
+                                                onChange={(e) => setCurrentColour(e.target.value)}
+                                            />
+                                            Light/neutral
+                                        </label>
+                                        <label className={`radio-option ${currentColour === 'medium' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="currentColour"
+                                                value="medium"
+                                                checked={currentColour === 'medium'}
+                                                onChange={(e) => setCurrentColour(e.target.value)}
+                                            />
+                                            Medium
+                                        </label>
+                                        <label className={`radio-option ${currentColour === 'dark' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="currentColour"
+                                                value="dark"
+                                                checked={currentColour === 'dark'}
+                                                onChange={(e) => setCurrentColour(e.target.value)}
+                                            />
+                                            Dark/dominant (navy, red, charcoal)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">New colour</label>
+                                    <div className="radio-group">
+                                        <label className={`radio-option ${newColour === 'same-or-darker' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="newColour"
+                                                value="same-or-darker"
+                                                checked={newColour === 'same-or-darker'}
+                                                onChange={(e) => setNewColour(e.target.value)}
+                                            />
+                                            Same depth or darker
+                                        </label>
+                                        <label className={`radio-option ${newColour === 'lighter' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="newColour"
+                                                value="lighter"
+                                                checked={newColour === 'lighter'}
+                                                onChange={(e) => setNewColour(e.target.value)}
+                                            />
+                                            Lighter than existing
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {currentColour === 'dark' && newColour === 'lighter' && (
+                                    <div className="warning-box">
+                                        ⚠️ Covering dark/dominant color with lighter requires 3 coats for proper coverage
+                                    </div>
+                                )}
+
+                                <div className="form-group">
+                                    <label className={`checkbox-option ${perfectCoverage ? 'checked' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={perfectCoverage}
+                                            onChange={(e) => setPerfectCoverage(e.target.checked)}
+                                        />
+                                        Customer requests perfect coverage, no flashing (forces 3 coats)
+                                    </label>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className={`checkbox-option ${primingNeeded ? 'checked' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={primingNeeded}
+                                            onChange={(e) => setPrimingNeeded(e.target.checked)}
+                                        />
+                                        Priming needed for repairs or water stains
+                                    </label>
+                                </div>
+
+                                <div className="info-box">
+                                    <strong>Coats calculated: {D}</strong>
+                                </div>
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentStep(paintTrim ? 4 : 3)}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => markStepComplete(5)}
+                                        disabled={!validateStep(5)}
+                                    >
+                                        Continue to Prep Level
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 6: Prep Difficulty */}
+                    <div className={`step-section ${currentStep !== 6 && 'collapsed'}`}
+                         onClick={() => currentStep !== 6 && completedSteps.includes(5) && goToStep(6)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(6) ? 'completed' : ''}`}>6</span>
+                                <span className="step-title">Prep Difficulty</span>
+                            </div>
+                            {currentStep !== 6 && C_prep > 0 && (
+                                <span className="calculated-value">{C_prep.toFixed(2)}x</span>
+                            )}
+                        </div>
+                        {currentStep === 6 && (
+                            <div className="step-content">
+                                <div className="form-group">
+                                    <label className="form-label">What's the prep level?</label>
+                                    <div className="radio-group">
+                                        <label className={`radio-option ${prepLevel === 'minimal' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="prepLevel"
+                                                value="minimal"
+                                                checked={prepLevel === 'minimal'}
+                                                onChange={(e) => setPrepLevel(e.target.value)}
+                                            />
+                                            Minimal (new drywall / repaint, no damage) — 1.0x
+                                        </label>
+                                        <label className={`radio-option ${prepLevel === 'medium' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="prepLevel"
+                                                value="medium"
+                                                checked={prepLevel === 'medium'}
+                                                onChange={(e) => setPrepLevel(e.target.value)}
+                                            />
+                                            Medium (light patching, sanding) — 1.05x
+                                        </label>
+                                        <label className={`radio-option ${prepLevel === 'heavy' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="prepLevel"
+                                                value="heavy"
+                                                checked={prepLevel === 'heavy'}
+                                                onChange={(e) => setPrepLevel(e.target.value)}
+                                            />
+                                            Heavy (lots of patching, masking, obstacles) — 1.15x+
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {(W_total + W_ceiling) < 400 && (W_total + W_ceiling) > 0 && (
+                                    <div className="warning-box">
+                                        ⚠️ Small job inefficiency applies (area &lt; 400 sq ft): minimum 1.15x prep multiplier
+                                    </div>
+                                )}
+
+                                <div className="info-box">
+                                    <strong>Prep coefficient: {C_prep.toFixed(2)}x</strong>
+                                    {primingNeeded && <div style={{marginTop: '8px'}}>Includes +0.075 for priming</div>}
+                                </div>
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentStep(5)}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => markStepComplete(6)}
+                                        disabled={!validateStep(6)}
+                                    >
+                                        Continue to Paint Quality
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 7: Paint Quality / Customer Preference */}
+                    <div className={`step-section ${currentStep !== 7 && 'collapsed'}`}
+                         onClick={() => currentStep !== 7 && completedSteps.includes(6) && goToStep(7)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(7) ? 'completed' : ''}`}>7</span>
+                                <span className="step-title">Paint Quality & Job Details</span>
+                            </div>
+                            {currentStep !== 7 && Q_paint > 0 && (
+                                <span className="calculated-value">{Q_paint.toFixed(2)}x quality</span>
+                            )}
+                        </div>
+                        {currentStep === 7 && (
+                            <div className="step-content">
+                                <div className="form-group">
+                                    <label className="form-label">Paint tier requested by customer</label>
+                                    <div className="radio-group">
+                                        <label className={`radio-option ${paintTier === 'standard' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="paintTier"
+                                                value="standard"
+                                                checked={paintTier === 'standard'}
+                                                onChange={(e) => setPaintTier(e.target.value)}
+                                            />
+                                            Standard / good — 1.0x
+                                        </label>
+                                        <label className={`radio-option ${paintTier === 'premium' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="paintTier"
+                                                value="premium"
+                                                checked={paintTier === 'premium'}
+                                                onChange={(e) => setPaintTier(e.target.value)}
+                                            />
+                                            Premium / scrubbable — 1.15x
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className={`checkbox-option ${rushJob ? 'checked' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={rushJob}
+                                            onChange={(e) => setRushJob(e.target.checked)}
+                                        />
+                                        Rush job (≤3 days) — increases risk buffer to 1.10x
+                                    </label>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className={`checkbox-option ${highSeason ? 'checked' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={highSeason}
+                                            onChange={(e) => setHighSeason(e.target.checked)}
+                                        />
+                                        High season — increases margin to 25% (from 20%)
+                                    </label>
+                                </div>
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentStep(6)}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => markStepComplete(7)}
+                                        disabled={!validateStep(7)}
+                                    >
+                                        Continue to Rate Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 8: Labour / Rate Assumptions */}
+                    <div className={`step-section ${currentStep !== 8 && 'collapsed'}`}
+                         onClick={() => currentStep !== 8 && completedSteps.includes(7) && goToStep(8)}>
+                        <div className="step-header">
+                            <div>
+                                <span className={`step-number ${completedSteps.includes(8) ? 'completed' : ''}`}>8</span>
+                                <span className="step-title">Labour & Rate Configuration</span>
+                            </div>
+                        </div>
+                        {currentStep === 8 && (
+                            <div className="step-content">
+                                <div className="admin-toggle">
+                                    <span className="toggle-link" onClick={() => setShowAdmin(!showAdmin)}>
+                                        {showAdmin ? '▼ Hide' : '▶ Show'} Admin Settings
+                                    </span>
+                                </div>
+
+                                {showAdmin && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">Wall coverage rate (R_p)</label>
+                                            <div className="input-with-unit">
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    value={R_p}
+                                                    onChange={(e) => setR_p(parseFloat(e.target.value))}
+                                                    min="0"
+                                                    step="5"
+                                                />
+                                                <span className="unit-label">sq ft/hr</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="form-label">Painter rate (R_lab)</label>
+                                            <div className="input-with-unit">
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    value={R_lab}
+                                                    onChange={(e) => setR_lab(parseFloat(e.target.value))}
+                                                    min="0"
+                                                    step="0.5"
+                                                />
+                                                <span className="unit-label">$/hr</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="form-label">Base material cost (P_mat)</label>
+                                            <div className="input-with-unit">
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    value={P_mat}
+                                                    onChange={(e) => setP_mat(parseFloat(e.target.value))}
+                                                    min="0"
+                                                    step="0.01"
+                                                />
+                                                <span className="unit-label">$/sq ft</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="form-label">Overhead (OH)</label>
+                                            <div className="input-with-unit">
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    value={OH * 100}
+                                                    onChange={(e) => setOH(parseFloat(e.target.value) / 100)}
+                                                    min="0"
+                                                    step="1"
+                                                />
+                                                <span className="unit-label">%</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="form-label">Base profit margin (M)</label>
+                                            <div className="input-with-unit">
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    value={M * 100}
+                                                    onChange={(e) => setM(parseFloat(e.target.value) / 100)}
+                                                    min="0"
+                                                    step="1"
+                                                />
+                                                <span className="unit-label">%</span>
+                                            </div>
+                                            {highSeason && (
+                                                <div className="info-box" style={{marginTop: '8px', fontSize: '12px'}}>
+                                                    High season active: actual margin is 25%
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+
+                                {!showAdmin && (
+                                    <div className="info-box">
+                                        Using default rates from industry standards. Click "Show Admin Settings" to customize.
+                                    </div>
+                                )}
+
+                                <div className="step-actions">
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentStep(7)}
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        className="btn btn-success"
+                                        onClick={calculateResults}
+                                    >
+                                        Calculate Quote
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* STEP 9 & 10: Results */}
+                    {results && (
+                        <div className="results-section">
+                            <h2 className="breakdown-title" style={{marginBottom: '30px', textAlign: 'center', fontSize: '24px'}}>
+                                Quote Results
+                            </h2>
+
+                            <div className="results-grid">
+                                <div className="result-card">
+                                    <div className="result-label">Customer Price</div>
+                                    <div className="result-value highlight">${results.Price.toFixed(2)}</div>
+                                    <div className="result-subtitle">${results.price_per_sqft.toFixed(2)}/sq ft</div>
+                                </div>
+
+                                <div className="result-card">
+                                    <div className="result-label">Internal Cost</div>
+                                    <div className="result-value">${results.C_base.toFixed(2)}</div>
+                                    <div className="result-subtitle">Labour + materials + OH</div>
+                                </div>
+
+                                <div className="result-card">
+                                    <div className="result-label">Total Hours</div>
+                                    <div className="result-value">{results.H_total.toFixed(1)}</div>
+                                    <div className="result-subtitle">hrs @ ${R_lab}/hr</div>
+                                </div>
+                            </div>
+
+                            <div className="breakdown-section">
+                                <div className="breakdown-title">Cost Breakdown</div>
+                                <div className="breakdown-row">
+                                    <span>Labour ({results.H_total.toFixed(1)} hrs × ${R_lab}/hr)</span>
+                                    <span>${results.C_labour.toFixed(2)}</span>
+                                </div>
+                                <div className="breakdown-row">
+                                    <span>Materials ({results.W.toFixed(0)} sq ft × {results.D} coats × ${P_mat}/sq ft)</span>
+                                    <span>${results.C_materials.toFixed(2)}</span>
+                                </div>
+                                <div className="breakdown-row">
+                                    <span>Overhead ({(results.OH * 100).toFixed(0)}%)</span>
+                                    <span>${(results.C_base - (results.C_labour + results.C_materials)).toFixed(2)}</span>
+                                </div>
+                                <div className="breakdown-row">
+                                    <span>Risk buffer ({((results.C_risk - 1) * 100).toFixed(0)}%)</span>
+                                    <span>${((results.C_base * results.C_risk) - results.C_base).toFixed(2)}</span>
+                                </div>
+                                <div className="breakdown-row">
+                                    <span>Profit margin ({(results.M * 100).toFixed(0)}%)</span>
+                                    <span>${(results.Price - (results.C_base * results.C_risk)).toFixed(2)}</span>
+                                </div>
+                                <div className="breakdown-row">
+                                    <span><strong>Total Quote</strong></span>
+                                    <span><strong>${results.Price.toFixed(2)}</strong></span>
+                                </div>
+                            </div>
+
+                            {triggeredFactors.length > 0 && (
+                                <div className="factors-list">
+                                    <div className="breakdown-title">Pricing Adjustments Applied</div>
+                                    {triggeredFactors.map((factor, index) => (
+                                        <div key={index} className="factor-item">
+                                            <span className="factor-icon">►</span>
+                                            <span>{factor}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{textAlign: 'center', marginTop: '30px'}}>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => {
+                                        setCurrentStep(1);
+                                        setResults(null);
+                                        setCompletedSteps([]);
+                                    }}
+                                >
+                                    Start New Quote
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PaintingEstimator />);
+    </script>
+</body>
+</html>
+
+
